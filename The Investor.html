@@ -9,10 +9,322 @@
 </head>
 <body>
 <tw-story><noscript><tw-noscript>JavaScript needs to be enabled to play The Investor.</tw-noscript></noscript></tw-story>
-<tw-storydata name="The Investor" startnode="1" creator="Twine" creator-version="2.12.1" format="Harlowe" format-version="3.3.9" ifid="73EDDB44-6EC6-43E2-BCC7-F60552E207AE" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style><script role="script" id="twine-user-script" type="text/twine-javascript"></script><tw-passagedata pid="1" name="Start" tags="" position="675,275" size="100,100">(set: $cash to 10000)
+<tw-storydata name="The Investor" startnode="1" creator="Twine" creator-version="2.12.1" format="Harlowe" format-version="3.3.9" ifid="73EDDB44-6EC6-43E2-BCC7-F60552E207AE" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">/* The Investor: projector theme (dark navy "trading floor") */
+:root {
+  --bg: #0a1430;
+  --bg2: #10214a;
+  --panel: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.14);
+  --ink: #f2f6ff;
+  --muted: #a9b8dc;
+  --gold: #f7c948;
+  --accent: #5ad8e6;
+  --up: #3ee08f;
+  --down: #ff6b6b;
+}
+html, body {
+  background: var(--bg);
+}
+tw-story {
+  background:
+    linear-gradient(rgba(90, 216, 230, 0.05) 1px, transparent 1px) 0 0 / 100% 64px,
+    radial-gradient(ellipse at top, var(--bg2), var(--bg) 70%);
+  color: var(--ink);
+  font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: clamp(22px, 1.6vw, 32px);
+  line-height: 1.45;
+  /* side padding leaves room for Harlowe's undo/redo column (5em left of the passage) */
+  padding: 150px max(5vw, 5.5em) 60px;
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+tw-passage {
+  max-width: 1150px;
+  margin: 0 auto;
+  font-size: 1em;
+}
+tw-passage h1 {
+  font-size: 1.9em;
+  line-height: 1.15;
+  margin: 0.2em 0 0.4em;
+  color: var(--gold);
+  letter-spacing: -0.01em;
+}
+tw-passage strong { color: #fff; }
+tw-passage em { color: var(--muted); }
+
+/* Choices as big buttons */
+tw-passage tw-link,
+tw-passage .choice {
+  display: block;
+  margin: 0.35em 0;
+  padding: 0.55em 0.9em;
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  transition: background 0.15s, transform 0.15s;
+}
+tw-passage tw-link:hover,
+tw-passage tw-link:focus {
+  color: #06142e;
+  background: var(--accent);
+  transform: translateX(6px);
+}
+tw-passage tw-link.visited { color: var(--ink); }
+tw-passage tw-link.visited:hover,
+tw-passage tw-link.visited:focus { color: #06142e; }
+tw-passage tw-link::before { content: "▸ "; }
+tw-passage .choice.disabled {
+  color: var(--muted);
+  border-style: dashed;
+  border-color: var(--line);
+  font-weight: 400;
+}
+
+/* Buttons are blocks already: drop the blank lines Harlowe adds after them */
+tw-passage tw-hook:has(> tw-link) + br,
+tw-passage tw-hook:has(> tw-link) + br + tw-consecutive-br,
+tw-passage tw-hook:has(> .recap) + br { display: none; }
+
+/* Recap of the previous choice */
+tw-passage .recap {
+  margin: 0 0 0.8em;
+  padding: 0.6em 0.9em;
+  background: var(--panel);
+  border-left: 6px solid var(--gold);
+  border-radius: 8px;
+  font-size: 0.9em;
+  color: var(--ink);
+}
+tw-passage .recap::before {
+  content: "LAST MOVE";
+  display: block;
+  font-size: 0.6em;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+}
+
+/* Money bar pinned to the top of the screen */
+.money-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  gap: 2vw;
+  padding: 14px 5vw;
+  background: rgba(6, 14, 34, 0.92);
+  border-bottom: 2px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.money-bar .cell {
+  flex: 1;
+  max-width: 340px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: 0.5em;
+  padding: 6px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+}
+.money-bar .lbl {
+  grid-column: 1 / -1;
+  font-size: 0.55em;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.money-bar .val { font-size: 1.15em; font-weight: 800; }
+.money-bar .delta { font-size: 0.6em; font-weight: 700; }
+.money-bar .total { border: 2px solid var(--gold); }
+.money-bar .total .val { color: var(--gold); }
+.money-bar .up { animation: flash-up 1.2s ease-out; }
+.money-bar .down { animation: flash-down 1.2s ease-out; }
+.money-bar .up .delta { color: var(--up); }
+.money-bar .down .delta { color: var(--down); }
+@keyframes flash-up { 0% { background: rgba(62, 224, 143, 0.45); } 100% { background: var(--panel); } }
+@keyframes flash-down { 0% { background: rgba(255, 107, 107, 0.5); } 100% { background: var(--panel); } }
+
+/* Undo / redo controls: small and out of the way */
+tw-sidebar { color: var(--muted); }
+tw-sidebar tw-icon { opacity: 0.55; }
+tw-sidebar tw-icon:hover { opacity: 1; }
+
+/* Results chart */
+.chart { margin: 0.6em 0 1em; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .you-line {
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
+  animation: draw-line 1.6s 0.3s ease-out forwards;
+}
+@keyframes draw-line { to { stroke-dashoffset: 0; } }
+.chart .legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em 1.4em;
+  font-size: 0.75em;
+  color: var(--muted);
+}
+.chart .legend span::before {
+  content: "";
+  display: inline-block;
+  width: 1.4em;
+  height: 0.25em;
+  margin-right: 0.4em;
+  vertical-align: middle;
+  border-radius: 2px;
+  background: currentColor;
+}
+.chart .legend .you { color: var(--gold); }
+.chart .legend .index { color: var(--accent); }
+.chart .legend .savings { color: #c3a6ff; }
+
+@media (max-width: 800px) {
+  tw-story { padding-top: 120px; }
+  .money-bar { gap: 8px; padding: 8px; font-size: 18px; }
+  .money-bar .cell { padding: 4px 8px; }
+}
+</style><script role="script" id="twine-user-script" type="text/twine-javascript">/* The Investor: money formatting, animated money bar, results chart. */
+(function () {
+  function formatMoney(n) {
+    n = Math.round(Number(n) || 0);
+    return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US');
+  }
+  window.formatMoney = formatMoney;
+
+  function formatMoneySpans(root) {
+    root.querySelectorAll('.money:not([data-done])').forEach(function (el) {
+      var raw = el.textContent.replace(/[^0-9.-]/g, '');
+      if (raw === '') return;
+      el.setAttribute('data-done', '1');
+      el.textContent = formatMoney(raw);
+    });
+  }
+
+  /* ---- Money bar: count up/down from the previous screen's values ---- */
+  var last = {};
+  /* Undo/redo: show the restored values without a gain/loss flash */
+  var skipDelta = false;
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('tw-sidebar tw-icon')) skipDelta = true;
+  }, true);
+  function countTo(el, from, to) {
+    var start = null, dur = 700;
+    function step(t) {
+      if (start === null) start = t;
+      var k = Math.min(1, (t - start) / dur);
+      var e = 1 - Math.pow(1 - k, 3);
+      el.textContent = formatMoney(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  function initBar(bar) {
+    bar.setAttribute('data-done', '1');
+    bar.querySelectorAll('.val').forEach(function (el) {
+      var key = el.getAttribute('data-key');
+      var v = Number(el.getAttribute('data-v')) || 0;
+      var prev = last[key];
+      var cell = el.parentNode;
+      var delta = cell.querySelector('.delta');
+      if (skipDelta || prev === undefined || prev === v) {
+        el.textContent = formatMoney(v);
+      } else {
+        var d = v - prev;
+        if (key === 'total') {
+          cell.classList.add(d > 0 ? 'up' : 'down');
+          delta.textContent = (d > 0 ? '▲ ' : '▼ ') + formatMoney(Math.abs(d));
+        }
+        el.textContent = formatMoney(prev);
+        countTo(el, prev, v);
+      }
+      last[key] = v;
+    });
+    skipDelta = false;
+  }
+
+  /* ---- Results chart: your path vs. two simple strategies ---- */
+  var BENCH = [
+    { cls: 'index', name: 'Index fund & hold', color: '#5ad8e6', data: [10000, 8000, 8000, 11200] },
+    { cls: 'savings', name: 'All savings', color: '#c3a6ff', data: [10000, 10000, 10000, 10500] }
+  ];
+  var STAGES = ['Start', 'Crash', 'Hype', 'Year 5'];
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function svgEl(tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function drawChart(el) {
+    el.setAttribute('data-done', '1');
+    var you = el.getAttribute('data-path').split(',').map(Number);
+    var all = you.concat(BENCH[0].data, BENCH[1].data);
+    var lo = Math.floor(Math.min.apply(null, all) / 2000) * 2000;
+    var hi = Math.ceil(Math.max.apply(null, all) / 2000) * 2000;
+    if (hi === lo) hi = lo + 2000;
+    var W = 1000, H = 330, L = 110, R = 150, T = 20, B = 50;
+    function x(i) { return L + (i * (W - L - R)) / (STAGES.length - 1); }
+    function y(v) { return T + ((hi - v) * (H - T - B)) / (hi - lo); }
+    function pts(d) { return d.map(function (v, i) { return x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' '); }
+
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Your money over five years compared with two strategies' });
+    for (var v = lo; v <= hi; v += 2000) {
+      svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'rgba(255,255,255,0.12)' }));
+      svg.appendChild(svgEl('text', { x: L - 14, y: y(v) + 7, 'text-anchor': 'end', fill: '#a9b8dc', 'font-size': 20 }, formatMoney(v)));
+    }
+    STAGES.forEach(function (s, i) {
+      svg.appendChild(svgEl('text', { x: x(i), y: H - 12, 'text-anchor': 'middle', fill: '#a9b8dc', 'font-size': 22 }, s));
+    });
+    BENCH.forEach(function (b) {
+      svg.appendChild(svgEl('polyline', { points: pts(b.data), fill: 'none', stroke: b.color, 'stroke-width': 4, 'stroke-dasharray': '10 8', opacity: 0.8 }));
+    });
+    var line = svgEl('polyline', { points: pts(you), fill: 'none', stroke: '#f7c948', 'stroke-width': 8, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', class: 'you-line' });
+    svg.appendChild(line);
+    you.forEach(function (v, i) {
+      svg.appendChild(svgEl('circle', { cx: x(i), cy: y(v), r: 9, fill: '#f7c948', stroke: '#0a1430', 'stroke-width': 3 }));
+    });
+    var last = you.length - 1;
+    svg.appendChild(svgEl('text', { x: x(last) + 18, y: y(you[last]) + 9, fill: '#f7c948', 'font-size': 28, 'font-weight': 800 }, formatMoney(you[last])));
+
+    var legend = document.createElement('div');
+    legend.className = 'legend';
+    legend.innerHTML = '<span class="you">Your path</span>' +
+      BENCH.map(function (b) { var same = b.data.join() === you.join() ? ' (same as yours)' : '';
+        return '<span class="' + b.cls + '">' + b.name.replace('&', '&amp;') + same + '</span>'; }).join('');
+    el.appendChild(svg);
+    el.appendChild(legend);
+  }
+  window.drawCharts = function () {
+    document.querySelectorAll('.chart[data-path]:not([data-done])').forEach(drawChart);
+  };
+
+  function onRender() {
+    formatMoneySpans(document);
+    document.querySelectorAll('.money-bar:not([data-done])').forEach(initBar);
+    if (document.querySelector('.new-game:not([data-done])')) { document.querySelector('.new-game').setAttribute('data-done', '1'); last = {}; }
+    if (window.drawCharts) window.drawCharts();
+  }
+
+  new MutationObserver(onRender).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script><tw-passagedata pid="1" name="Start" tags="" position="675,275" size="100,100">(set: $cash to 10000)
 (set: $invested to 0)
 (set: $score to 0)
-# The Investor&#39;s Challenge
+(set: $history to (a: 10000))
+(set: $recap to &quot;&quot;)&lt;span class=&quot;new-game&quot;&gt;&lt;/span&gt;
+# The Investor's Challenge
 You have **$10,000** and five years to grow it. Make four choices and see what happens.
 
 *This is a fictional simulation, not a forecast.*
@@ -20,39 +332,44 @@ You have **$10,000** and five years to grow it. Make four choices and see what h
 [[Begin investing-&gt;Choice1]]</tw-passagedata><tw-passagedata pid="2" name="Choice1" tags="" position="825,275" size="100,100"># 1. Where will you start?
 Your starting balance is **$10,000**.
 
-(link: &quot;Buy shares of one company (high risk)&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 1)(go-to: &quot;Market&quot;)]
+(link: &quot;Buy shares of one company (high risk)&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 1)(set: $recap to &quot;You put all $10,000 into one company. If that single business stumbles, your whole portfolio feels it.&quot;)(go-to: &quot;Market&quot;)]
 
-(link: &quot;Buy a diversified index fund&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 2)(go-to: &quot;Market&quot;)]
+(link: &quot;Buy a diversified index fund&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 2)(set: $recap to &quot;You bought an index fund: one purchase that spreads your money across hundreds of companies.&quot;)(go-to: &quot;Market&quot;)]
 
-(link: &quot;Keep it in savings&quot;)[(set: $cash to 10000)(set: $invested to 0)(set: $score to $score + 1)(go-to: &quot;Market&quot;)]</tw-passagedata><tw-passagedata pid="3" name="Market" tags="" position="950,275" size="100,100"># 2. The market drops!
+(link: &quot;Keep it in savings&quot;)[(set: $cash to 10000)(set: $invested to 0)(set: $score to $score + 1)(set: $recap to &quot;You kept your money in savings. It is safe from market drops, but it grows slowly.&quot;)(go-to: &quot;Market&quot;)]</tw-passagedata><tw-passagedata pid="3" name="Market" tags="" position="950,275" size="100,100">(set: $invested to (round: $invested * 0.8))(set: $history to it + (a: $cash + $invested))(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# 2. The market drops!
 One year later, stocks fall by 20%. Your invested money loses value, but your savings do not.
 
-(set: $invested to (round: $invested * 0.8))
-**Current total: $(print: $cash + $invested)**
+**Current total: &lt;span class=&quot;money&quot;&gt;(print: $cash + $invested)&lt;/span&gt;**
 
-(link: &quot;Sell all investments&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;Opportunity&quot;)]
+(link: &quot;Sell all investments&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(set: $recap to &quot;You sold after the drop, which locks in the loss. Selling low is one of the most common investing mistakes.&quot;)(go-to: &quot;Opportunity&quot;)]
 
-(link: &quot;Hold your investments&quot;)[(set: $score to $score + 2)(go-to: &quot;Opportunity&quot;)]
+(link: &quot;Hold your investments&quot;)[(set: $score to $score + 2)(set: $recap to &quot;You held on through the drop. Downturns are normal, and markets have historically recovered over time.&quot;)(go-to: &quot;Opportunity&quot;)]
 
-(link: &quot;Invest $2,000 more if available&quot;)[(if: $cash &gt;= 2000)[(set: $cash to $cash - 2000)(set: $invested to $invested + 2000)(set: $score to $score + 2)](go-to: &quot;Opportunity&quot;)]</tw-passagedata><tw-passagedata pid="4" name="Opportunity" tags="" position="1075,275" size="100,100"># 3. A trending stock
+(if: $cash &gt;= 2000)[(link: &quot;Invest $2,000 more&quot;)[(set: $cash to $cash - 2000)(set: $invested to $invested + 2000)(set: $score to $score + 2)(set: $recap to &quot;You invested $2,000 more while prices were low, buying more at a discount.&quot;)(go-to: &quot;Opportunity&quot;)]](else:)[&lt;span class=&quot;choice disabled&quot;&gt;Invest $2,000 more (not enough cash)&lt;/span&gt;]</tw-passagedata><tw-passagedata pid="4" name="Opportunity" tags="" position="1075,275" size="100,100">(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# 3. A trending stock
 A tech stock is getting lots of attention online. What do you do?
 
-(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(set: $recap to &quot;You chased the hype and the trending stock fell 15%. Popular online does not mean a good investment.&quot;)(go-to: &quot;Final Choice&quot;)]
 
-(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(set: $recap to &quot;You ignored the hype and stuck to your plan. A plan protects you from emotional decisions.&quot;)(go-to: &quot;Final Choice&quot;)]
 
-(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;FinalChoice&quot;)]</tw-passagedata><tw-passagedata pid="5" name="Final Choice" tags="" position="1200,275" size="100,100"># 3. A trending stock
-A tech stock is getting lots of attention online. What do you do?
+(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(set: $recap to &quot;You moved everything to cash. That avoids risk, but it also means missing any recovery.&quot;)(go-to: &quot;Final Choice&quot;)]</tw-passagedata><tw-passagedata pid="5" name="Final Choice" tags="" position="1200,275" size="100,100">(set: $history to it + (a: $cash + $invested))(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# 4. The market recovers
+Over the next few years, the market climbs back and grows. Investments gain 40%, while savings earn a little interest.
 
-(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Stay invested for the long term&quot;)[(set: $invested to (round: $invested * 1.4))(set: $cash to (round: $cash * 1.05))(set: $score to $score + 2)(set: $recap to &quot;You stayed invested as the market recovered. Patience paid off.&quot;)(go-to: &quot;Ending&quot;)]
 
-(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Move your savings into an index fund&quot;)[(set: $invested to (round: ($invested + $cash) * 1.3))(set: $cash to 0)(set: $score to $score + 1)(set: $recap to &quot;You put your savings to work in an index fund as the market grew.&quot;)(go-to: &quot;Ending&quot;)]
 
-(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;FinalChoice&quot;)]</tw-passagedata><tw-passagedata pid="6" name="Ending" tags="" position="1325,275" size="100,100"># Your investment results
-**Final portfolio value: $(print: $cash + $invested)**
+(link: &quot;Sell everything and keep it in cash&quot;)[(set: $cash to (round: ($cash + $invested) * 1.05))(set: $invested to 0)(set: $recap to &quot;You sold everything for cash and missed most of the recovery.&quot;)(go-to: &quot;Ending&quot;)]</tw-passagedata><tw-passagedata pid="6" name="Ending" tags="" position="1325,275" size="100,100">(set: $history to it + (a: $cash + $invested))(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# Your investment results
+**Final portfolio value: &lt;span class=&quot;money&quot;&gt;(print: $cash + $invested)&lt;/span&gt;**
 
-**Cash: $(print: $cash)**  
-**Investments: $(print: $invested)**
+**Cash: &lt;span class=&quot;money&quot;&gt;(print: $cash)&lt;/span&gt;**  
+**Investments: &lt;span class=&quot;money&quot;&gt;(print: $invested)&lt;/span&gt;**
+
+(print: '&lt;div class=&quot;chart&quot; data-path=&quot;' + (joined: &quot;,&quot;, ...(altered: _n via (str: _n), ...$history)) + '&quot;&gt;&lt;/div&gt;')
 
 (if: $score &gt;= 6)[**Strategy:** You favored patience and long-term planning.]
 (else-if: $score &gt;= 3)[**Strategy:** You balanced some risk with caution.]
@@ -60,7 +377,7 @@ A tech stock is getting lots of attention online. What do you do?
 
 **Takeaway:** Diversification can reduce company-specific risk, and market losses can make emotional decisions tempting. No strategy guarantees a profit.
 
-[[Play again-&gt;Start]]</tw-passagedata></tw-storydata>
+[[Play again-&gt;Start]]</tw-passagedata><tw-passagedata pid="7" name="MoneyBar" tags="footer" position="1000,450" size="100,100">(unless: (passage:)'s name is &quot;Start&quot;)[(print: '&lt;div class=&quot;money-bar&quot;&gt;&lt;div class=&quot;cell cash&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Cash&lt;/span&gt;&lt;span class=&quot;val&quot; data-key=&quot;cash&quot; data-v=&quot;' + (str: $cash) + '&quot;&gt;&lt;/span&gt;&lt;span class=&quot;delta&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;cell invested&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Invested&lt;/span&gt;&lt;span class=&quot;val&quot; data-key=&quot;invested&quot; data-v=&quot;' + (str: $invested) + '&quot;&gt;&lt;/span&gt;&lt;span class=&quot;delta&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;cell total&quot;&gt;&lt;span class=&quot;lbl&quot;&gt;Total&lt;/span&gt;&lt;span class=&quot;val&quot; data-key=&quot;total&quot; data-v=&quot;' + (str: $cash + $invested) + '&quot;&gt;&lt;/span&gt;&lt;span class=&quot;delta&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;')]</tw-passagedata></tw-storydata>
 <script title="Twine engine code" data-main="harlowe">(function(){"use strict";
 var require,define;!function(){var e={},r={};require=function(i){var n=e[i];return n&&(r[i]=n[1].apply(void 0,n[0].map(require)),e[i]=void 0),r[i]},(define=function(r,i,n){if("function"==typeof r)return r();e[r]=[i,n]}).amd=!0}();/*!
  * https://github.com/paulmillr/es6-shim
