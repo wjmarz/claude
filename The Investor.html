@@ -37,18 +37,18 @@ One year later, stocks fall by 20%. Your invested money loses value, but your sa
 (link: &quot;Invest $2,000 more if available&quot;)[(if: $cash &gt;= 2000)[(set: $cash to $cash - 2000)(set: $invested to $invested + 2000)(set: $score to $score + 2)](go-to: &quot;Opportunity&quot;)]</tw-passagedata><tw-passagedata pid="4" name="Opportunity" tags="" position="1075,275" size="100,100"># 3. A trending stock
 A tech stock is getting lots of attention online. What do you do?
 
-(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(go-to: &quot;Final Choice&quot;)]
 
-(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(go-to: &quot;Final Choice&quot;)]
 
-(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;FinalChoice&quot;)]</tw-passagedata><tw-passagedata pid="5" name="Final Choice" tags="" position="1200,275" size="100,100"># 3. A trending stock
-A tech stock is getting lots of attention online. What do you do?
+(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;Final Choice&quot;)]</tw-passagedata><tw-passagedata pid="5" name="Final Choice" tags="" position="1200,275" size="100,100"># 4. The market recovers
+Over the next few years, the market climbs back and grows. Investments gain 40%, while savings earn a little interest.
 
-(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Stay invested for the long term&quot;)[(set: $invested to (round: $invested * 1.4))(set: $cash to (round: $cash * 1.05))(set: $score to $score + 2)(go-to: &quot;Ending&quot;)]
 
-(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(go-to: &quot;FinalChoice&quot;)]
+(link: &quot;Move your savings into an index fund&quot;)[(set: $invested to (round: ($invested + $cash) * 1.3))(set: $cash to 0)(set: $score to $score + 1)(go-to: &quot;Ending&quot;)]
 
-(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;FinalChoice&quot;)]</tw-passagedata><tw-passagedata pid="6" name="Ending" tags="" position="1325,275" size="100,100"># Your investment results
+(link: &quot;Sell everything and keep it in cash&quot;)[(set: $cash to (round: ($cash + $invested) * 1.05))(set: $invested to 0)(go-to: &quot;Ending&quot;)]</tw-passagedata><tw-passagedata pid="6" name="Ending" tags="" position="1325,275" size="100,100"># Your investment results
 **Final portfolio value: $(print: $cash + $invested)**
 
 **Cash: $(print: $cash)**  
