@@ -127,10 +127,11 @@ async function chartPath(page) {
     await page.waitForTimeout(900); // let count animation finish
     const bar = await page.evaluate(() => {
       const b = document.querySelector('.money-bar');
-      return b && { text: b.innerText, inv: b.querySelector('.invested').className, top: b.getBoundingClientRect().top };
+      return b && { text: b.innerText, tot: b.querySelector('.total').className, cashDelta: b.querySelector('.cash .delta').textContent, top: b.getBoundingClientRect().top };
     });
-    check('Market: bar total $8,000', bar && /Total[\s\S]*\$8,000/.test(bar.text), bar && bar.text);
-    check('Market: invested marked down', bar && /\bdown\b/.test(bar.inv), bar && bar.inv);
+    check('Market: bar total $8,000', bar && /Total\s*\$8,000/i.test(bar.text), bar && bar.text);
+    check('Market: total marked down with ▼ $2,000', bar && /\bdown\b/.test(bar.tot) && /▼ \$2,000/.test(bar.text), bar && bar.tot + ' ' + bar.text);
+    check('Market: cash cell has no gain/loss marker', bar && bar.cashDelta === '', bar && bar.cashDelta);
     check('Market: bar at top of page', bar && bar.top < 200, bar && bar.top);
     const sizes = await page.evaluate(() => ({
       body: parseFloat(getComputedStyle(document.querySelector('tw-passage')).fontSize),
