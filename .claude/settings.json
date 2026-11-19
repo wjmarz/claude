@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "ai-use-log": {
+      "source": {
+        "source": "github",
+        "repo": "hilaryhavens/ai-use-log"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ai-use-log@ai-use-log": true
+  }
+}
