@@ -149,6 +149,24 @@ async function chartPath(page) {
     await page.close();
   }
 
+  // Final review fixes: undo visible, readable visited links, no fake loss after undo
+  for (const vp of [{ width: 1280, height: 720 }, { width: 1024, height: 768 }]) {
+    const { page } = await play(browser, [1, 1, 1, 0], { viewport: vp });
+    const left = await page.$eval('tw-sidebar tw-icon[title="Undo"]', (e) => e.getBoundingClientRect().left);
+    check(`undo button on screen at ${vp.width} (Ending)`, left >= 0, left);
+    const color = await page.evaluate(() => {
+      const links = document.querySelectorAll('tw-passage tw-link');
+      return getComputedStyle(links[links.length - 1]).color;
+    });
+    check(`"Play again" uses theme color at ${vp.width}`, color === 'rgb(242, 246, 255)', color);
+    await page.click('tw-sidebar tw-icon[title="Undo"]');
+    await page.waitForFunction(() => /market recovers/i.test(document.querySelector('tw-passage').innerText));
+    await page.waitForTimeout(300);
+    const after = await page.$eval('.money-bar .total', (c) => ({ cls: c.className, delta: c.querySelector('.delta').textContent }));
+    check(`no gain/loss flash after undo at ${vp.width}`, !/\b(up|down)\b/.test(after.cls) && after.delta === '', JSON.stringify(after));
+    await page.close();
+  }
+
   if (process.env.TASK && Number(process.env.TASK) < 3) return finish(browser);
 
   // ---------- Task 3: results chart ----------
