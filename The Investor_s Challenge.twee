@@ -5,6 +5,7 @@ The Investor's Challenge
 :: StoryData
 {
   "ifid": "D3EE5088-498A-452B-935B-1C922A57BEDE",
+  "start": "Start",
   "format": "Harlowe",
   "format-version": "3.3.9",
   "zoom": 1
