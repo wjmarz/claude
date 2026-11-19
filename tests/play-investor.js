@@ -166,8 +166,13 @@ async function chartPath(page) {
     for (const label of ['Your path', 'Index fund & hold', 'All savings', '$11,200']) {
       check(`chart shows "${label}"`, chart && chart.text.includes(label), chart && chart.text);
     }
+    check('chart notes when your path equals a benchmark', chart && chart.text.includes('Index fund & hold (same as yours)'), chart && chart.text);
     if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/ending.png` });
     await page.close();
+    const other = await play(browser, [0, 1, 0, 1]);
+    const t2 = await other.page.$eval('.chart', (c) => c.textContent);
+    check('chart has no "same as yours" for a different path', !t2.includes('same as yours'), t2);
+    await other.page.close();
   }
 
   finish(browser);

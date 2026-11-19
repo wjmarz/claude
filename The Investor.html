@@ -155,6 +155,12 @@ tw-sidebar { color: var(--muted); }
 /* Results chart */
 .chart { margin: 0.6em 0 1em; }
 .chart svg { width: 100%; height: auto; display: block; }
+.chart .you-line {
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
+  animation: draw-line 1.6s 0.3s ease-out forwards;
+}
+@keyframes draw-line { to { stroke-dashoffset: 0; } }
 .chart .legend {
   display: flex;
   flex-wrap: wrap;
@@ -233,6 +239,64 @@ tw-sidebar { color: var(--muted); }
       last[key] = v;
     });
   }
+
+  /* ---- Results chart: your path vs. two simple strategies ---- */
+  var BENCH = [
+    { cls: 'index', name: 'Index fund & hold', color: '#5ad8e6', data: [10000, 8000, 8000, 11200] },
+    { cls: 'savings', name: 'All savings', color: '#c3a6ff', data: [10000, 10000, 10000, 10500] }
+  ];
+  var STAGES = ['Start', 'Crash', 'Hype', 'Year 5'];
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function svgEl(tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function drawChart(el) {
+    el.setAttribute('data-done', '1');
+    var you = el.getAttribute('data-path').split(',').map(Number);
+    var all = you.concat(BENCH[0].data, BENCH[1].data);
+    var lo = Math.floor(Math.min.apply(null, all) / 2000) * 2000;
+    var hi = Math.ceil(Math.max.apply(null, all) / 2000) * 2000;
+    if (hi === lo) hi = lo + 2000;
+    var W = 1000, H = 330, L = 110, R = 150, T = 20, B = 50;
+    function x(i) { return L + (i * (W - L - R)) / (STAGES.length - 1); }
+    function y(v) { return T + ((hi - v) * (H - T - B)) / (hi - lo); }
+    function pts(d) { return d.map(function (v, i) { return x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' '); }
+
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Your money over five years compared with two strategies' });
+    for (var v = lo; v <= hi; v += 2000) {
+      svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'rgba(255,255,255,0.12)' }));
+      svg.appendChild(svgEl('text', { x: L - 14, y: y(v) + 7, 'text-anchor': 'end', fill: '#a9b8dc', 'font-size': 20 }, formatMoney(v)));
+    }
+    STAGES.forEach(function (s, i) {
+      svg.appendChild(svgEl('text', { x: x(i), y: H - 12, 'text-anchor': 'middle', fill: '#a9b8dc', 'font-size': 22 }, s));
+    });
+    BENCH.forEach(function (b) {
+      svg.appendChild(svgEl('polyline', { points: pts(b.data), fill: 'none', stroke: b.color, 'stroke-width': 4, 'stroke-dasharray': '10 8', opacity: 0.8 }));
+    });
+    var line = svgEl('polyline', { points: pts(you), fill: 'none', stroke: '#f7c948', 'stroke-width': 8, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', class: 'you-line' });
+    svg.appendChild(line);
+    you.forEach(function (v, i) {
+      svg.appendChild(svgEl('circle', { cx: x(i), cy: y(v), r: 9, fill: '#f7c948', stroke: '#0a1430', 'stroke-width': 3 }));
+    });
+    var last = you.length - 1;
+    svg.appendChild(svgEl('text', { x: x(last) + 18, y: y(you[last]) + 9, fill: '#f7c948', 'font-size': 28, 'font-weight': 800 }, formatMoney(you[last])));
+
+    var legend = document.createElement('div');
+    legend.className = 'legend';
+    legend.innerHTML = '<span class="you">Your path</span>' +
+      BENCH.map(function (b) { var same = b.data.join() === you.join() ? ' (same as yours)' : '';
+        return '<span class="' + b.cls + '">' + b.name.replace('&', '&amp;') + same + '</span>'; }).join('');
+    el.appendChild(svg);
+    el.appendChild(legend);
+  }
+  window.drawCharts = function () {
+    document.querySelectorAll('.chart[data-path]:not([data-done])').forEach(drawChart);
+  };
 
   function onRender() {
     formatMoneySpans(document);
