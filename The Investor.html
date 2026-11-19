@@ -9,10 +9,35 @@
 </head>
 <body>
 <tw-story><noscript><tw-noscript>JavaScript needs to be enabled to play The Investor.</tw-noscript></noscript></tw-story>
-<tw-storydata name="The Investor" startnode="1" creator="Twine" creator-version="2.12.1" format="Harlowe" format-version="3.3.9" ifid="73EDDB44-6EC6-43E2-BCC7-F60552E207AE" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style><script role="script" id="twine-user-script" type="text/twine-javascript"></script><tw-passagedata pid="1" name="Start" tags="" position="675,275" size="100,100">(set: $cash to 10000)
+<tw-storydata name="The Investor" startnode="1" creator="Twine" creator-version="2.12.1" format="Harlowe" format-version="3.3.9" ifid="73EDDB44-6EC6-43E2-BCC7-F60552E207AE" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style><script role="script" id="twine-user-script" type="text/twine-javascript">/* The Investor: money formatting, animated money bar, results chart. */
+(function () {
+  function formatMoney(n) {
+    n = Math.round(Number(n) || 0);
+    return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US');
+  }
+  window.formatMoney = formatMoney;
+
+  function formatMoneySpans(root) {
+    root.querySelectorAll('.money:not([data-done])').forEach(function (el) {
+      var raw = el.textContent.replace(/[^0-9.-]/g, '');
+      if (raw === '') return;
+      el.setAttribute('data-done', '1');
+      el.textContent = formatMoney(raw);
+    });
+  }
+
+  function onRender() {
+    formatMoneySpans(document);
+  }
+
+  new MutationObserver(onRender).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script><tw-passagedata pid="1" name="Start" tags="" position="675,275" size="100,100">(set: $cash to 10000)
 (set: $invested to 0)
 (set: $score to 0)
-# The Investor&#39;s Challenge
+(set: $history to (a: 10000))
+(set: $recap to &quot;&quot;)
+# The Investor's Challenge
 You have **$10,000** and five years to grow it. Make four choices and see what happens.
 
 *This is a fictional simulation, not a forecast.*
@@ -20,39 +45,48 @@ You have **$10,000** and five years to grow it. Make four choices and see what h
 [[Begin investing-&gt;Choice1]]</tw-passagedata><tw-passagedata pid="2" name="Choice1" tags="" position="825,275" size="100,100"># 1. Where will you start?
 Your starting balance is **$10,000**.
 
-(link: &quot;Buy shares of one company (high risk)&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 1)(go-to: &quot;Market&quot;)]
+(link: &quot;Buy shares of one company (high risk)&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 1)(set: $recap to &quot;You put all $10,000 into one company. If that single business stumbles, your whole portfolio feels it.&quot;)(go-to: &quot;Market&quot;)]
 
-(link: &quot;Buy a diversified index fund&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 2)(go-to: &quot;Market&quot;)]
+(link: &quot;Buy a diversified index fund&quot;)[(set: $invested to 10000)(set: $cash to 0)(set: $score to $score + 2)(set: $recap to &quot;You bought an index fund: one purchase that spreads your money across hundreds of companies.&quot;)(go-to: &quot;Market&quot;)]
 
-(link: &quot;Keep it in savings&quot;)[(set: $cash to 10000)(set: $invested to 0)(set: $score to $score + 1)(go-to: &quot;Market&quot;)]</tw-passagedata><tw-passagedata pid="3" name="Market" tags="" position="950,275" size="100,100"># 2. The market drops!
+(link: &quot;Keep it in savings&quot;)[(set: $cash to 10000)(set: $invested to 0)(set: $score to $score + 1)(set: $recap to &quot;You kept your money in savings. It is safe from market drops, but it grows slowly.&quot;)(go-to: &quot;Market&quot;)]</tw-passagedata><tw-passagedata pid="3" name="Market" tags="" position="950,275" size="100,100">(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# 2. The market drops!
 One year later, stocks fall by 20%. Your invested money loses value, but your savings do not.
 
 (set: $invested to (round: $invested * 0.8))
-**Current total: $(print: $cash + $invested)**
+(set: $history to it + (a: $cash + $invested))
+**Current total: &lt;span class=&quot;money&quot;&gt;(print: $cash + $invested)&lt;/span&gt;**
 
-(link: &quot;Sell all investments&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;Opportunity&quot;)]
+(link: &quot;Sell all investments&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(set: $recap to &quot;You sold after the drop, which locks in the loss. Selling low is one of the most common investing mistakes.&quot;)(go-to: &quot;Opportunity&quot;)]
 
-(link: &quot;Hold your investments&quot;)[(set: $score to $score + 2)(go-to: &quot;Opportunity&quot;)]
+(link: &quot;Hold your investments&quot;)[(set: $score to $score + 2)(set: $recap to &quot;You held on through the drop. Downturns are normal, and markets have historically recovered over time.&quot;)(go-to: &quot;Opportunity&quot;)]
 
-(link: &quot;Invest $2,000 more if available&quot;)[(if: $cash &gt;= 2000)[(set: $cash to $cash - 2000)(set: $invested to $invested + 2000)(set: $score to $score + 2)](go-to: &quot;Opportunity&quot;)]</tw-passagedata><tw-passagedata pid="4" name="Opportunity" tags="" position="1075,275" size="100,100"># 3. A trending stock
+(if: $cash &gt;= 2000)[(link: &quot;Invest $2,000 more&quot;)[(set: $cash to $cash - 2000)(set: $invested to $invested + 2000)(set: $score to $score + 2)(set: $recap to &quot;You invested $2,000 more while prices were low, buying more at a discount.&quot;)(go-to: &quot;Opportunity&quot;)]](else:)[&lt;span class=&quot;choice disabled&quot;&gt;Invest $2,000 more (not enough cash)&lt;/span&gt;]</tw-passagedata><tw-passagedata pid="4" name="Opportunity" tags="" position="1075,275" size="100,100">(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# 3. A trending stock
 A tech stock is getting lots of attention online. What do you do?
 
-(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(go-to: &quot;Final Choice&quot;)]
+(link: &quot;Chase the trend&quot;)[(set: $invested to (round: $invested * 0.85))(set: $score to $score - 1)(set: $recap to &quot;You chased the hype and the trending stock fell 15%. Popular online does not mean a good investment.&quot;)(go-to: &quot;Final Choice&quot;)]
 
-(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(go-to: &quot;Final Choice&quot;)]
+(link: &quot;Stay diversified and follow your plan&quot;)[(set: $score to $score + 2)(set: $recap to &quot;You ignored the hype and stuck to your plan. A plan protects you from emotional decisions.&quot;)(go-to: &quot;Final Choice&quot;)]
 
-(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(go-to: &quot;Final Choice&quot;)]</tw-passagedata><tw-passagedata pid="5" name="Final Choice" tags="" position="1200,275" size="100,100"># 4. The market recovers
+(link: &quot;Keep your money in cash&quot;)[(set: $cash to $cash + $invested)(set: $invested to 0)(set: $recap to &quot;You moved everything to cash. That avoids risk, but it also means missing any recovery.&quot;)(go-to: &quot;Final Choice&quot;)]</tw-passagedata><tw-passagedata pid="5" name="Final Choice" tags="" position="1200,275" size="100,100">(set: $history to it + (a: $cash + $invested))
+(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# 4. The market recovers
 Over the next few years, the market climbs back and grows. Investments gain 40%, while savings earn a little interest.
 
-(link: &quot;Stay invested for the long term&quot;)[(set: $invested to (round: $invested * 1.4))(set: $cash to (round: $cash * 1.05))(set: $score to $score + 2)(go-to: &quot;Ending&quot;)]
+(link: &quot;Stay invested for the long term&quot;)[(set: $invested to (round: $invested * 1.4))(set: $cash to (round: $cash * 1.05))(set: $score to $score + 2)(set: $recap to &quot;You stayed invested as the market recovered. Patience paid off.&quot;)(go-to: &quot;Ending&quot;)]
 
-(link: &quot;Move your savings into an index fund&quot;)[(set: $invested to (round: ($invested + $cash) * 1.3))(set: $cash to 0)(set: $score to $score + 1)(go-to: &quot;Ending&quot;)]
+(link: &quot;Move your savings into an index fund&quot;)[(set: $invested to (round: ($invested + $cash) * 1.3))(set: $cash to 0)(set: $score to $score + 1)(set: $recap to &quot;You put your savings to work in an index fund as the market grew.&quot;)(go-to: &quot;Ending&quot;)]
 
-(link: &quot;Sell everything and keep it in cash&quot;)[(set: $cash to (round: ($cash + $invested) * 1.05))(set: $invested to 0)(go-to: &quot;Ending&quot;)]</tw-passagedata><tw-passagedata pid="6" name="Ending" tags="" position="1325,275" size="100,100"># Your investment results
-**Final portfolio value: $(print: $cash + $invested)**
+(link: &quot;Sell everything and keep it in cash&quot;)[(set: $cash to (round: ($cash + $invested) * 1.05))(set: $invested to 0)(set: $recap to &quot;You sold everything for cash and missed most of the recovery.&quot;)(go-to: &quot;Ending&quot;)]</tw-passagedata><tw-passagedata pid="6" name="Ending" tags="" position="1325,275" size="100,100">(set: $history to it + (a: $cash + $invested))
+(if: $recap is not &quot;&quot;)[&lt;div class=&quot;recap&quot;&gt;$recap&lt;/div&gt;]
+# Your investment results
+**Final portfolio value: &lt;span class=&quot;money&quot;&gt;(print: $cash + $invested)&lt;/span&gt;**
 
-**Cash: $(print: $cash)**  
-**Investments: $(print: $invested)**
+**Cash: &lt;span class=&quot;money&quot;&gt;(print: $cash)&lt;/span&gt;**  
+**Investments: &lt;span class=&quot;money&quot;&gt;(print: $invested)&lt;/span&gt;**
+
+(print: '&lt;div class=&quot;chart&quot; data-path=&quot;' + (joined: &quot;,&quot;, ...(altered: _n via (str: _n), ...$history)) + '&quot;&gt;&lt;/div&gt;')
 
 (if: $score &gt;= 6)[**Strategy:** You favored patience and long-term planning.]
 (else-if: $score &gt;= 3)[**Strategy:** You balanced some risk with caution.]
